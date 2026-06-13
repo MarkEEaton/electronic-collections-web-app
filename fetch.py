@@ -1,9 +1,7 @@
 import httpx
-import json
 import math
 import os
 from dotenv import load_dotenv
-from pprint import pprint
 
 load_dotenv()
 
@@ -23,7 +21,7 @@ def sub_fetch(id_number):
         sub_fetch_interface(sub_json),
         sub_fetch_vendors(sub_json),
         sub_fetch_cz_ids(sub_json),
-        sub_fetch_public_name_override(sub_json)
+        sub_fetch_public_name_override(sub_json),
     ]
 
 
@@ -75,7 +73,14 @@ def sub_fetch_vendors(sub_json):
         return False
 
 
-def main():
+def fetch_records():
+    """Fetch every NZ electronic-collection record from the Alma API.
+
+    Returns a list of tuples:
+    ``(public_name, groups, interface, vendor, cz_id_value, cz_id_label,
+    public_name_override)``. Sorting and name normalization are applied
+    later by ``transform.normalize_records``.
+    """
     offset = 0
     data = httpx.get(url1.format(offset, apikey1), timeout=500)
     json_data = data.json()
@@ -96,15 +101,15 @@ def main():
             # function to run collection-level api call
             sub_return = sub_fetch(x["id"])
             names.append(
-                (x["public_name"], sub_return[0], sub_return[1], sub_return[2], sub_return[3][0], sub_return[3][1], sub_return[4])
+                (
+                    x["public_name"],
+                    sub_return[0],
+                    sub_return[1],
+                    sub_return[2],
+                    sub_return[3][0],
+                    sub_return[3][1],
+                    sub_return[4],
+                )
             )
 
-    # sort alphabetically, case-insensitive
-    sorted_names = sorted(names, key=lambda x: x[0].casefold())
-
-    with open("static/data.json", "w") as f:
-        json.dump(sorted_names, f)
-
-
-if __name__ == "__main__":
-    main()
+    return names
