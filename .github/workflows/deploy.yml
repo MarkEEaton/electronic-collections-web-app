@@ -2,8 +2,9 @@ name: Build and deploy
 
 on:
   schedule:
-    # Roughly hourly. GitHub may delay scheduled runs under load.
-    - cron: "0 * * * *"
+    # Roughly hourly. GitHub may still delay scheduled runs under load, so
+    # this avoids the congested top of the hour for a less-contended minute.
+    - cron: "37 * * * *"
   workflow_dispatch: {}
   push:
     branches: [main]
