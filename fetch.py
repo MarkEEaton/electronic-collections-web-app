@@ -5,6 +5,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Bound each Alma request so a slow/hung endpoint can't stall the build job
+# indefinitely. Alma responds in well under this even for the 100-record pages.
+TIMEOUT = 60
+
 apikey1 = os.getenv("NZ_API_KEY")
 apikey2 = os.getenv("BIBS_NZ_API_KEY")
 url1 = "https://api-na.hosted.exlibrisgroup.com/almaws/v1/electronic/e-collections?limit=100&offset={}&format=json&apikey={}"
@@ -14,7 +18,7 @@ url3 = "https://api-na.hosted.exlibrisgroup.com/almaws/v1/bibs/{}?apikey={}&form
 
 def sub_fetch(id_number):
     """get e-collection level data"""
-    sub_data = httpx.get(url2.format(id_number, apikey1), timeout=500)
+    sub_data = httpx.get(url2.format(id_number, apikey1), timeout=TIMEOUT)
     sub_json = sub_data.json()
     return [
         sub_fetch_groups(sub_json),
@@ -34,7 +38,7 @@ def sub_fetch_cz_ids(sub_json):
     """get cz id"""
     try:
         nz_mms_id = sub_json["resource_metadata"]["mms_id"]["value"]
-        bibs_data = httpx.get(url3.format(nz_mms_id, apikey2), timeout=500)
+        bibs_data = httpx.get(url3.format(nz_mms_id, apikey2), timeout=TIMEOUT)
         bibs_json = bibs_data.json()
         for number in bibs_json["network_number"]:
             if "EXLCZ" in number:
@@ -82,7 +86,7 @@ def fetch_records():
     later by ``transform.normalize_records``.
     """
     offset = 0
-    data = httpx.get(url1.format(offset, apikey1), timeout=500)
+    data = httpx.get(url1.format(offset, apikey1), timeout=TIMEOUT)
     json_data = data.json()
 
     # calculate the number of pages of results
@@ -93,7 +97,7 @@ def fetch_records():
     # paginate
     for page in range(pages):
         offset = page * 100
-        page_data = httpx.get(url1.format(offset, apikey1), timeout=500)
+        page_data = httpx.get(url1.format(offset, apikey1), timeout=TIMEOUT)
         page_json = page_data.json()
 
         for x in page_json["electronic_collection"]:
