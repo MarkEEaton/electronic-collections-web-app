@@ -1,4 +1,12 @@
+import re
+
 from render import render
+
+
+def table_text(html):
+    """The table's text as a reader sees it: tags removed, whitespace collapsed."""
+    tbody = html.split("<tbody>")[1].split("</tbody>")[0]
+    return " ".join(re.sub(r"<[^>]+>", " ", tbody).split())
 
 
 def two_records():
@@ -27,43 +35,39 @@ def test_render_emits_one_row_per_record():
     assert html.count('scope="row"') == 2
 
 
-def test_render_shows_collection_name_and_id():
-    html = render(two_records(), count=2, time="x")
-    assert "Alpha" in html
-    assert "MMS ID# 123" in html
-
-
-def test_render_shows_all_cuny_when_groups_falsy():
-    record = [["Beta", False, False, False, "456", "Collection ID", False]]
-    html = render(record, count=1, time="x")
-    assert "All CUNY Institutions" in html
-
-
-def test_render_joins_group_names_when_present():
+def test_render_shows_every_field_of_a_full_record():
     record = [
-        [
-            "A",
-            ["Hunter College", "Queens College"],
-            False,
-            False,
-            "1",
-            "Collection ID",
-            False,
-        ]
+        "Alpha",
+        ["Hunter College", "Queens College"],
+        "EBSCOhost",
+        "EBSCO",
+        "123",
+        "MMS ID",
+        "Alt Name",
     ]
-    html = render(record, count=1, time="x")
-    assert "Hunter College" in html
-    assert "Queens College" in html
+    html = render([record], count=1, time="x")
+    assert table_text(html) == (
+        "Alpha (MMS ID# 123) "
+        "Public name override: Alt Name "
+        "Groups: Hunter College, Queens College "
+        "Interface name: EBSCOhost "
+        "Vendor name: EBSCO"
+    )
 
 
-def test_render_shows_override_none_when_falsy():
-    record = [["Beta", False, False, False, "456", "Collection ID", False]]
-    html = render(record, count=1, time="x")
-    assert "Public name override:" in html
-    assert "<em>none</em>" in html
+def test_render_shows_defaults_when_optional_fields_are_missing():
+    # False groups means the collection is available to every CUNY school.
+    record = ["Beta", False, False, False, "456", "Collection ID", False]
+    html = render([record], count=1, time="x")
+    assert table_text(html) == (
+        "Beta (Collection ID# 456) "
+        "Public name override: none "
+        "Groups: All CUNY Institutions"
+    )
 
 
-def test_render_shows_override_value_when_present():
-    record = [["A", False, False, False, "1", "Collection ID", "Custom Name"]]
-    html = render(record, count=1, time="x")
-    assert "Public name override: Custom Name" in html
+def test_render_escapes_html_in_collection_names():
+    # Unescaped, the "<" would start a tag and break the page.
+    record = ["Taylor & Francis <Archive>", False, False, False, "1", "x", False]
+    html = render([record], count=1, time="x")
+    assert "Taylor &amp; Francis &lt;Archive&gt;" in html
