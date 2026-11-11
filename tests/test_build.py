@@ -72,6 +72,21 @@ def test_build_writes_cname_for_custom_domain(site):
     assert (site / "CNAME").read_text() == "electroniccollections.ocert.at\n"
 
 
+def test_build_replaces_the_page_when_run_again(site, alma):
+    # Locally, dist/ is still there from the previous build. The `site`
+    # fixture already built once; `alma` is the same fake it filled.
+    alma[PAGE_1] = {
+        "total_record_count": 1,
+        "electronic_collection": [
+            {"id": "6102", "public_name": "Elsevier ScienceDirect"}
+        ],
+    }
+    build.build()
+    html = (site / "index.html").read_text()
+    assert "Elsevier ScienceDirect" in html
+    assert "eBook Academic Collection" not in html
+
+
 def test_build_copies_the_stylesheets_the_page_links(site):
     html = (site / "index.html").read_text()
     assert 'href="main.css"' in html
