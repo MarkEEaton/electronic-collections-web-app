@@ -66,6 +66,13 @@ def test_render_shows_defaults_when_optional_fields_are_missing():
     )
 
 
+def test_render_sets_strict_content_security_policy():
+    # GitHub Pages can't send headers, so this meta tag is the page's only CSP.
+    html = render([], count=0, time="x")
+    assert 'http-equiv="Content-Security-Policy"' in html
+    assert "default-src 'none'; style-src 'self'; img-src 'self'" in html
+
+
 def test_render_escapes_html_in_collection_names():
     # Unescaped, the "<" would start a tag and break the page.
     record = ["Taylor & Francis <Archive>", False, False, False, "1", "x", False]
