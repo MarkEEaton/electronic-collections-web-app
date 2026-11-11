@@ -44,7 +44,8 @@ uv run python build.py     # build dist/ ; open dist/index.html in a browser
 ```
 
 `build.py` performs live Alma API calls, so it needs the keys. The tests do not
-touch the network (the one HTTP-calling function is monkeypatched).
+touch the network: `tests/conftest.py` replaces `httpx.get` with a fake Alma API
+that answers only the exact URLs each test expects.
 
 ## Deployment (one-time GitHub setup)
 
