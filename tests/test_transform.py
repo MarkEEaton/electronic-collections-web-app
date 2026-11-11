@@ -21,12 +21,15 @@ def test_tolerates_false_groups_for_all_institutions():
 
 
 def test_normalize_sorts_records_case_insensitively_by_public_name():
+    # A case-sensitive sort would put "Elsevier" first, because "E" < "e".
     records = [
-        ["beta collection", False, False, False, "1", "Collection ID", False],
-        ["Alpha Collection", False, False, False, "2", "Collection ID", False],
+        ["Elsevier ScienceDirect", False, False, False, "1", "Collection ID", False],
+        ["eBook Academic Collection", False, False, False, "2", "Collection ID", False],
     ]
-    result = normalize_records(records)
-    assert [r[0] for r in result] == ["Alpha Collection", "beta collection"]
+    assert normalize_records(records) == [
+        ["eBook Academic Collection", False, False, False, "2", "Collection ID", False],
+        ["Elsevier ScienceDirect", False, False, False, "1", "Collection ID", False],
+    ]
 
 
 def test_normalize_swaps_school_names_within_records():
